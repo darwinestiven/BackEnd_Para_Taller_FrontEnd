@@ -1,6 +1,10 @@
 // Importar los módulos y dependencias necesarios
+import { Op } from "sequelize";//consultas de Sequelize.
 import { mascotas } from "../modelos/mascotasModelo.js";
 import { adopcionesMascotas } from "../modelos/adopcionesModelo.js";
+import { usuarios } from "../modelos/usuariosModelo.js";
+
+
 
 // Crear un nuevo recurso
 const crear = (req, res) => {
@@ -97,17 +101,43 @@ const buscarId = (req, res) => {
 
 // Buscar todos los recursos
 const buscar = (req, res) => {
-    // Utilizar Sequelize para buscar todos los recursos en la tabla 'mascotas'
-    mascotas.findAll()
-        .then((resultado) => {
-            res.status(200).json(resultado);
-        })
-        .catch((err) => {
-            res.status(500).json({
-                mensaje: `No se encontraron registros ::: ${err}`
+    const terminoBusqueda = req.query.termino;
+    console.log(terminoBusqueda)
+
+    // Verificar si se proporciona un término de búsqueda
+    if (!terminoBusqueda) {
+        // Si no se proporciona, realizar la búsqueda normal de todos los recursos
+        mascotas.findAll()
+            .then((resultado) => {
+                res.status(200).json(resultado);
+            })
+            .catch((err) => {
+                res.status(500).json({
+                    mensaje: `No se encontraron registros ::: ${err}`
+                });
             });
-        });
+    } else {
+        // Si se proporciona un término de búsqueda, realizar la búsqueda filtrada
+        mascotas.findAll({
+            where: {
+                // Puedes ajustar estas condiciones según tus necesidades
+                [Op.or]: [
+                    { nombre: { [Op.like]: `%${terminoBusqueda}%` } },
+                    { raza: { [Op.like]: `%${terminoBusqueda}%` } },
+                ]
+            }
+        })
+            .then((resultado) => {
+                res.status(200).json(resultado);
+            })
+            .catch((err) => {
+                res.status(500).json({
+                    mensaje: `No se encontraron registros con el término de búsqueda ::: ${err}`
+                });
+            });
+    }
 };
+
 
 // Actualizar un recurso
 const actualizar = (req, res) => {
@@ -195,5 +225,33 @@ const eliminar = (req, res) => {
         });
 };
 
+
+const autenticarUsuario = async (req, res) => {
+    // Obtener el nombre de usuario y contraseña del cuerpo de la solicitud
+    const { username, password } = req.body;
+    console.log(username);
+    console.log(password);
+
+    try {
+        // Buscar un usuario en la base de datos que coincida con el nombre de usuario y la contraseña proporcionados
+        const usuarioEncontrado = await usuarios.findOne({ where: { username, password } });
+        console.log(usuarioEncontrado);
+
+        if (usuarioEncontrado) {
+            // Autenticación exitosa: El usuario existe en la base de datos con las credenciales proporcionadas
+            res.status(200).json({ success: true });
+        } else {
+            // Credenciales incorrectas: El usuario no fue encontrado con las credenciales proporcionadas
+            res.status(401).json({ success: false, mensaje: "Credenciales incorrectas" });
+        }
+    } catch (error) {
+        // Manejar errores: En caso de error durante la búsqueda en la base de datos
+        console.error("Error en autenticarUsuario:", error);
+        res.status(500).json({ success: false, mensaje: "Error interno del servidor" });
+    }
+};
+
+
+
 // Exportar las funciones del controlador
-export { crear, buscarId, buscar, actualizar, eliminar, crearAdopcion };
+export { crear, buscarId, buscar, actualizar, eliminar, crearAdopcion, autenticarUsuario };
