@@ -15,6 +15,22 @@ const mascotas = db.define("mascotas",{
     edad:{
         type: Sequelize.INTEGER,
         allowNull: true
+    },
+    raza:{
+        type: Sequelize.STRING,
+        allowNull: true
+    },
+    imagen: {
+        type: Sequelize.TEXT,
+        allowNull: true
+    },
+    descripcion1: {
+        type: Sequelize.TEXT,
+        allowNull: true
+    },
+    descripcion2: {
+        type: Sequelize.TEXT,
+        allowNull: true
     }
 });
 
